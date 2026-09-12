@@ -1,0 +1,8 @@
+{"id": "q001", "prompt": "What is 6 multiplied by 7? Explain in one sentence.", "reference": "42"}
+{"id": "q002", "prompt": "In two sentences, what is photosynthesis and what gas does it release?", "reference": "oxygen"}
+{"id": "q003", "prompt": "What is the average time complexity of lookup in a hash map, and why?", "reference": "O(1)"}
+{"id": "q004", "prompt": "When was the Treaty of Versailles signed and what did it formally end?", "reference": "1919"}
+{"id": "q005", "prompt": "Name one advantage of JSONL over a single large JSON array for logging.", "reference": "append"}
+{"id": "q006", "prompt": "What does a p95 latency measure tell you that a mean does not?", "reference": "tail"}
+{"id": "q007", "prompt": "Why should model comparisons fix temperature and seed across providers?", "reference": "reproducib"}
+{"id": "q008", "prompt": "What is the difference between a retry and a timeout in an API client?", "reference": "retry"}

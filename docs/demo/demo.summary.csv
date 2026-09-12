@@ -1,0 +1,4 @@
+model,calls,errors,error_rate,latency_mean_s,latency_median_s,latency_p95_s,latency_p99_s,quality_mean,total_prompt_tokens,total_completion_tokens,retries
+mock-fast-7b,24,0,0.0,0.261,0.262,0.2992,0.3018,0.7665,489,308,1
+mock-mid-13b,24,0,0.0,0.5618,0.563,0.6174,0.6177,0.95,489,397,0
+mock-slow-2b,24,4,0.1667,1.7636,1.8119,1.9733,1.9885,0.7799,407,255,19

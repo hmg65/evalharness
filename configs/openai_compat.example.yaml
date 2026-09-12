@@ -1,0 +1,45 @@
+# Template for comparing real hosted models over any OpenAI-compatible API.
+# Copy to your own file, set the env vars it names, and run:
+#   python -m evalharness run --config configs/my_run.yaml
+#
+# Keys are read from the environment only. Never paste a key into this file.
+run_name: hosted_compare
+prompts_path: data/prompts/synthetic_qa.jsonl   # point at your own prompt set
+output_dir: results
+samples_per_prompt: 3
+concurrency: 4
+max_retries: 3
+backoff_s: 1.0
+request_timeout_s: 60.0
+
+models:
+  - name: gpt-4o-mini
+    provider: openai_compat
+    model_id: gpt-4o-mini
+    base_url: https://api.openai.com/v1
+    api_key_env: OPENAI_API_KEY
+    params: {temperature: 0.0, max_tokens: 256, seed: 42}
+
+  - name: groq-llama
+    provider: openai_compat
+    model_id: llama-3.1-8b-instant
+    base_url: https://api.groq.com/openai/v1
+    api_key_env: GROQ_API_KEY
+    params: {temperature: 0.0, max_tokens: 256}
+
+  - name: local-vllm
+    provider: openai_compat
+    model_id: Qwen/Qwen2.5-7B-Instruct
+    base_url: http://localhost:8000/v1     # a local vLLM/Ollama server
+    api_key_env: LOCAL_API_KEY              # any dummy value if the server ignores auth
+    params: {temperature: 0.0, max_tokens: 256, seed: 42}
+
+scorers:
+  - type: contains
+    weight: 2.0
+  - type: not_refusal
+    weight: 1.0
+  - type: length
+    min_words: 3
+    max_words: 120
+    weight: 1.0

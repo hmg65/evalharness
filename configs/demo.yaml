@@ -1,0 +1,39 @@
+# Synthetic demo: three fake "hosted models" with different personalities.
+# No API keys, no network, no cost. Run: python -m evalharness demo
+run_name: demo
+prompts_path: data/prompts/synthetic_qa.jsonl
+output_dir: results
+samples_per_prompt: 3        # repeat each prompt to make latency stats meaningful
+concurrency: 8
+max_retries: 3
+backoff_s: 1.0
+request_timeout_s: 2.0       # mock-slow-2b caps at this, showing the timeout path
+
+models:
+  - name: mock-fast-7b
+    provider: mock
+    model_id: mock-fast-7b-instruct
+    params: {temperature: 0.0, seed: 7}
+    mock: {latency_ms: 220, jitter_ms: 80, quality: 0.58, fail_rate: 0.02, seed: 11}
+
+  - name: mock-mid-13b
+    provider: mock
+    model_id: mock-mid-13b-chat
+    params: {temperature: 0.0, seed: 13}
+    mock: {latency_ms: 480, jitter_ms: 140, quality: 0.84, fail_rate: 0.0, seed: 22}
+
+  - name: mock-slow-2b
+    provider: mock
+    model_id: mock-slow-2b-base
+    params: {temperature: 0.0, seed: 2}
+    mock: {latency_ms: 1500, jitter_ms: 1100, quality: 0.40, fail_rate: 0.25, seed: 33}
+
+scorers:
+  - type: contains
+    weight: 3.0
+  - type: not_refusal
+    weight: 1.0
+  - type: length
+    min_words: 3
+    max_words: 80
+    weight: 1.0

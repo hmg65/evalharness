@@ -1,0 +1,69 @@
+"""Command line: run an evaluation, rebuild a report, or run the synthetic demo."""
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+from .charts import write_charts
+from .config import load_config
+from .report import summarize_results, write_summary
+from .runner import read_jsonl, run, write_jsonl
+
+
+def _emit(results_path, stats, out_dir: Path, run_name: str) -> None:
+    json_path, csv_path, md_path = write_summary(stats, out_dir, run_name)
+    charts = write_charts(read_jsonl(results_path), stats, out_dir, run_name)
+    print(f"results:  {results_path}")
+    print(f"summary:  {json_path}\n          {csv_path}\n          {md_path}")
+    for c in charts:
+        print(f"chart:    {c}")
+    print()
+    print(md_path.read_text())
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    out_dir = Path(config.output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    results = run(config)
+    results_path = write_jsonl(results, out_dir / f"{config.run_name}.results.jsonl")
+    _emit(results_path, summarize_results(results), out_dir, config.run_name)
+    return 0
+
+
+def cmd_report(args: argparse.Namespace) -> int:
+    results = read_jsonl(args.results)
+    run_name = args.name or Path(args.results).name.replace(".results.jsonl", "")
+    _emit(Path(args.results), summarize_results(results), Path(args.output_dir), run_name)
+    return 0
+
+
+def cmd_demo(args: argparse.Namespace) -> int:
+    demo_cfg = Path(__file__).resolve().parent.parent / "configs" / "demo.yaml"
+    args.config = str(demo_cfg)
+    return cmd_run(args)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="evalharness",
+        description="Reproducible evaluation harness for hosted LLM APIs.",
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p_run = sub.add_parser("run", help="run an evaluation from a YAML config")
+    p_run.add_argument("--config", required=True, help="path to the run config YAML")
+    p_run.set_defaults(func=cmd_run)
+
+    p_rep = sub.add_parser("report", help="rebuild summary + charts from an existing results JSONL")
+    p_rep.add_argument("--results", required=True, help="path to a .results.jsonl file")
+    p_rep.add_argument("--output-dir", default="results")
+    p_rep.add_argument("--name", default=None, help="run name for output files")
+    p_rep.set_defaults(func=cmd_report)
+
+    p_demo = sub.add_parser("demo", help="run the bundled synthetic demo (no keys, no cost)")
+    p_demo.set_defaults(func=cmd_demo)
+
+    args = parser.parse_args(argv)
+    return args.func(args)
