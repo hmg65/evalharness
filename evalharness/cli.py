@@ -1,4 +1,4 @@
-"""Command line: run an evaluation, rebuild a report, or run the synthetic demo."""
+"""Command line: run an evaluation, rebuild a report, run the synthetic demo, or run the guided labs."""
 from __future__ import annotations
 
 import argparse
@@ -8,6 +8,7 @@ from pathlib import Path
 from .charts import write_charts
 from .config import load_config
 from .lab import cmd_lab
+from .lab2 import cmd_lab2
 from .report import summarize_results, write_summary
 from .runner import read_jsonl, run, write_jsonl
 
@@ -69,6 +70,19 @@ def main(argv: list[str] | None = None) -> int:
     p_lab = sub.add_parser("lab", help="guided Day 1 inference lab: 10 requests, plain-language output")
     p_lab.add_argument("--output-dir", default="results")
     p_lab.set_defaults(func=lambda args: cmd_lab(args.output_dir))
+
+    p_lab2 = sub.add_parser("lab2", help="Day 2 lab: the same 10 requests against a real local model server")
+    p_lab2.add_argument("--base-url", default="http://localhost:11434/v1",
+                        help="OpenAI-compatible base URL of the local server (default: Ollama)")
+    p_lab2.add_argument("--model", required=True,
+                        help="model id exactly as the server knows it, e.g. qwen3:4b")
+    p_lab2.add_argument("--api-key-env", default="LAB2_API_KEY",
+                        help="env var holding the API key; local servers accept any non-empty string")
+    p_lab2.add_argument("--concurrency", type=int, default=1,
+                        help="how many of the 10 requests run at once")
+    p_lab2.add_argument("--max-tokens", type=int, default=256)
+    p_lab2.add_argument("--output-dir", default="results")
+    p_lab2.set_defaults(func=cmd_lab2)
 
     args = parser.parse_args(argv)
     return args.func(args)

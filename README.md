@@ -22,7 +22,8 @@ pip install -r requirements.txt
 
 python -m evalharness demo     # synthetic end-to-end run, no keys needed
 python -m evalharness lab      # guided Day 1 inference lab, no keys needed
-python -m pytest -q            # 25 tests
+python -m evalharness lab2 --model qwen3:4b-instruct   # Day 2 lab, against a local server
+python -m pytest -q            # 29 tests
 ```
 
 The demo compares three fake models with different personalities (fast but
@@ -44,6 +45,11 @@ and errors. No keys, no cost, no jargon assumed. Then open
 [docs/lab/day1.md](docs/lab/day1.md): a short worksheet with five questions
 to answer from your own output, and the smallest honest next step to a real
 endpoint when you are ready.
+
+Ready for a real endpoint? [docs/lab/day2.md](docs/lab/day2.md) serves a
+small model from your own machine with Ollama and runs the same ten prompts
+at concurrency 1, 4, and 16: batching, queueing, and the throughput vs
+latency tradeoff, measured with the same columns.
 
 Sample output (committed in [docs/lab/](docs/lab/)):
 
@@ -163,6 +169,7 @@ evalharness/
     mock.py            deterministic fake models for demo/tests
   runner.py            concurrency, timeouts, retries, JSONL logging
   lab.py               guided Day 1 lab: streaming metrics, plain-language report
+  lab2.py              Day 2 lab: the same measurements against a real local server
   scoring.py           pluggable rubric scorers
   metrics.py           latency/reliability statistics
   report.py            summary JSON/CSV/Markdown
