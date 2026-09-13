@@ -21,12 +21,39 @@ cd evalharness
 pip install -r requirements.txt
 
 python -m evalharness demo     # synthetic end-to-end run, no keys needed
-python -m pytest -q            # 16 tests
+python -m evalharness lab      # guided Day 1 inference lab, no keys needed
+python -m pytest -q            # 25 tests
 ```
 
 The demo compares three fake models with different personalities (fast but
 sloppy, slower but careful, slow and flaky) and writes logs, summaries, and
 charts to `results/`.
+
+## Learning inference? Start with the Day 1 lab
+
+If you are here to learn how model endpoints behave under the hood, run:
+
+```bash
+python -m evalharness lab
+```
+
+It sends ten requests, one at a time, to a simulated streaming endpoint and
+explains every number in plain language: prompt tokens, output tokens, time
+to first token (TTFT), time per output token (TPOT), throughput, latency,
+and errors. No keys, no cost, no jargon assumed. Then open
+[docs/lab/day1.md](docs/lab/day1.md): a short worksheet with five questions
+to answer from your own output, and the smallest honest next step to a real
+endpoint when you are ready.
+
+Sample output (committed in [docs/lab/](docs/lab/)):
+
+| Req | Prompt tokens | Output tokens | First token (s) | Per token (ms) | Total (s) | Tokens/sec |
+|---|---|---|---|---|---|---|
+| r01 | 14 | 13 | 0.282 | 19 | 0.507 | 53 |
+| r09 | 128 | 8 | 0.457 | 21 | 0.605 | 47 |
+| r10 | 22 | 80 | 0.318 | 18 | 1.763 | 55 |
+
+![where the time goes](docs/lab/lab-day1.timeline.png)
 
 ## Demo output
 
@@ -135,6 +162,7 @@ evalharness/
     openai_compat.py   any OpenAI-compatible chat endpoint (httpx)
     mock.py            deterministic fake models for demo/tests
   runner.py            concurrency, timeouts, retries, JSONL logging
+  lab.py               guided Day 1 lab: streaming metrics, plain-language report
   scoring.py           pluggable rubric scorers
   metrics.py           latency/reliability statistics
   report.py            summary JSON/CSV/Markdown
@@ -145,6 +173,7 @@ data/prompts/          synthetic demo prompt set
 examples/              demo script, LLM-judge scorer example
 tests/                 pytest suite
 docs/demo/             committed demo output (what you see above)
+docs/lab/              Day 1 worksheet + committed lab output
 ```
 
 ## Notes

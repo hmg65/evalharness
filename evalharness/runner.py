@@ -23,7 +23,7 @@ from .scoring import build_scorers, weighted_score
 RESULT_FIELDS = [
     "run_name", "config_hash", "prompt_id", "prompt", "reference", "sample",
     "model", "model_id", "params", "status", "error", "attempts",
-    "latency_s", "prompt_tokens", "completion_tokens",
+    "latency_s", "ttft_s", "prompt_tokens", "completion_tokens",
     "quality", "quality_detail", "response_text", "started_at",
 ]
 
@@ -65,7 +65,7 @@ def _call_with_retries(client: ModelClient, prompt: str, params: dict[str, Any],
             resp = client.complete(prompt, params)
             return {
                 "status": "ok", "error": "", "attempts": attempts,
-                "latency_s": resp.latency_s,
+                "latency_s": resp.latency_s, "ttft_s": resp.ttft_s,
                 "prompt_tokens": resp.prompt_tokens, "completion_tokens": resp.completion_tokens,
                 "response_text": resp.text, "started_at": started, "model_id": resp.model_id,
             }
@@ -77,7 +77,7 @@ def _call_with_retries(client: ModelClient, prompt: str, params: dict[str, Any],
                     time.sleep(delay)
     return {
         "status": "error", "error": last_error, "attempts": attempts,
-        "latency_s": 0.0, "prompt_tokens": None, "completion_tokens": None,
+        "latency_s": 0.0, "ttft_s": None, "prompt_tokens": None, "completion_tokens": None,
         "response_text": "", "started_at": started, "model_id": client.model_id,
     }
 
@@ -123,6 +123,7 @@ def run(config: RunConfig) -> list[dict[str, Any]]:
                 "model": model.name, "model_id": row["model_id"], "params": model.params,
                 "status": row["status"], "error": row["error"], "attempts": row["attempts"],
                 "latency_s": round(row["latency_s"], 4),
+                "ttft_s": round(row["ttft_s"], 4) if row.get("ttft_s") is not None else None,
                 "prompt_tokens": row["prompt_tokens"], "completion_tokens": row["completion_tokens"],
                 "quality": round(quality, 4), "quality_detail": detail,
                 "response_text": row["response_text"], "started_at": row["started_at"],

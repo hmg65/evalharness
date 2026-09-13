@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .charts import write_charts
 from .config import load_config
+from .lab import cmd_lab
 from .report import summarize_results, write_summary
 from .runner import read_jsonl, run, write_jsonl
 
@@ -64,6 +65,10 @@ def main(argv: list[str] | None = None) -> int:
 
     p_demo = sub.add_parser("demo", help="run the bundled synthetic demo (no keys, no cost)")
     p_demo.set_defaults(func=cmd_demo)
+
+    p_lab = sub.add_parser("lab", help="guided Day 1 inference lab: 10 requests, plain-language output")
+    p_lab.add_argument("--output-dir", default="results")
+    p_lab.set_defaults(func=lambda args: cmd_lab(args.output_dir))
 
     args = parser.parse_args(argv)
     return args.func(args)

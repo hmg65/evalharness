@@ -143,3 +143,80 @@ class MockClient:
             model_id=self.model_id,
             raw={"mock": True},
         )
+
+
+class StreamingMockClient(MockClient):
+    """A mock that "streams": it splits each call into the wait for the first
+    token and the steady per-token trickle after it, the way a real streaming
+    endpoint behaves when you watch tokens arrive one by one.
+
+    ttft_ms: base wait before the first token appears (the model reading your
+      prompt - the "prefill" phase).
+    prompt_cost_ms_per_token: extra first-token wait per prompt token, so a
+      long prompt visibly pushes the first token out.
+    tpot_ms: time per output token after the first (the "decode" phase).
+    pad_to_tokens (per-call param): lengthen an answer with filler sentences
+      to simulate a model asked for a long, detailed response. Clearly fake,
+      and labeled as such in `raw`.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        model_id: str = "mock-stream",
+        ttft_ms: float = 250.0,
+        prompt_cost_ms_per_token: float = 1.5,
+        tpot_ms: float = 18.0,
+        jitter_ms: float = 40.0,
+        quality: float = 0.9,
+        fail_rate: float = 0.0,
+        seed: int = 0,
+    ) -> None:
+        super().__init__(
+            name, model_id=model_id, latency_ms=0.0, jitter_ms=jitter_ms,
+            quality=quality, fail_rate=fail_rate, seed=seed,
+        )
+        self.ttft_ms = ttft_ms
+        self.prompt_cost_ms_per_token = prompt_cost_ms_per_token
+        self.tpot_ms = tpot_ms
+
+    def complete(self, prompt: str, params: dict[str, Any]) -> ModelResponse:
+        if self._rng.random() < self.fail_rate:
+            raise RuntimeError(f"mock 500: simulated provider error from '{self.name}'")
+
+        roll = self._rng.random()
+        topic = _topic(prompt)
+        if roll < self.quality:
+            text = topic["good"]
+        elif roll < self.quality + (1 - self.quality) * 0.6:
+            text = topic["ok"]
+        else:
+            text = topic["bad"]
+
+        pad_to = params.get("pad_to_tokens")
+        if pad_to:
+            filler = "This sentence pads the answer to simulate a longer response."
+            while len(text.split()) < pad_to:
+                text += " " + filler
+
+        prompt_tokens = len(prompt.split()) + 8
+        completion_tokens = len(text.split())
+        ttft_ms = (
+            self.ttft_ms
+            + self.prompt_cost_ms_per_token * prompt_tokens
+            + self._rng.uniform(0, self.jitter_ms)
+        )
+        decode_ms = (
+            self.tpot_ms * max(completion_tokens - 1, 0)
+            + self._rng.uniform(0, self.jitter_ms)
+        )
+
+        return ModelResponse(
+            text=text,
+            latency_s=(ttft_ms + decode_ms) / 1000.0,
+            ttft_s=ttft_ms / 1000.0,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            model_id=self.model_id,
+            raw={"mock": True, "streams": True, "padded": bool(pad_to)},
+        )
